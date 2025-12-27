@@ -1,0 +1,201 @@
+# Завдання 1
+class Node:
+    def __init__(self, data):
+        self.data = data
+        self.next = None
+
+class LinkedList:
+    def __init__(self):
+        self.head = None
+
+    def push(self, data):
+        n = Node(data)
+        n.next = self.head
+        self.head = n
+
+    def reverse(self):
+        prev = None
+        cur = self.head
+        while cur:
+            nxt = cur.next
+            cur.next = prev
+            prev = cur
+            cur = nxt
+        self.head = prev
+
+    def sort(self):
+        sorted_head = None
+        cur = self.head
+        while cur:
+            nxt = cur.next
+            sorted_head = self._insert(sorted_head, cur)
+            cur = nxt
+        self.head = sorted_head
+
+    def _insert(self, head, node):
+        if not head or node.data < head.data:
+            node.next = head
+            return node
+        cur = head
+        while cur.next and cur.next.data < node.data:
+            cur = cur.next
+        node.next = cur.next
+        cur.next = node
+        return head
+
+def merge_sorted_lists(a, b):
+    d = Node(0)
+    t = d
+    while a and b:
+        if a.data < b.data:
+            t.next = a; a = a.next
+        else:
+            t.next = b; b = b.next
+        t = t.next
+    t.next = a or b
+    return d.next
+
+
+# Завдання 2
+import turtle, math
+def pythagoras_tree(l, s):
+    if l == 0: return
+    turtle.forward(s)
+    turtle.left(45); pythagoras_tree(l-1, s/math.sqrt(2))
+    turtle.right(90); pythagoras_tree(l-1, s/math.sqrt(2))
+    turtle.left(45); turtle.backward(s)
+def run_pythagoras():
+    turtle.speed(0)
+    turtle.left(90)
+    level = int(input("level: "))
+    pythagoras_tree(level, 100)
+    turtle.done()
+
+
+# Завдання 3
+import heapq
+def dijkstra(g, start):
+    q = [(0, start)]
+    d = {v: float("inf") for v in g}
+    d[start] = 0
+    while q:
+        dist, v = heapq.heappop(q)
+        if dist > d[v]:
+            continue
+        for to, w in g[v]:
+            nd = dist + w
+            if nd < d[to]:
+                d[to] = nd
+                heapq.heappush(q, (nd, to))
+    return d
+
+
+# Завдання 4
+import uuid, networkx as nx, matplotlib.pyplot as plt
+class BNode:
+    def __init__(self, val, color="skyblue"):
+        self.val = val
+        self.left = None
+        self.right = None
+        self.color = color
+        self.id = str(uuid.uuid4())
+
+def add_edges(g, n, pos, x=0, y=0, l=1):
+    if n:
+        g.add_node(n.id, color=n.color, label=n.val)
+        if n.left:
+            g.add_edge(n.id, n.left.id)
+            p = x - 1/2**l
+            pos[n.left.id] = (p, y-1)
+            add_edges(g, n.left, pos, p, y-1, l+1)
+        if n.right:
+            g.add_edge(n.id, n.right.id)
+            p = x + 1/2**l
+            pos[n.right.id] = (p, y-1)
+            add_edges(g, n.right, pos, p, y-1, l+1)
+
+def draw_tree(root):
+    t = nx.DiGraph()
+    pos = {root.id: (0,0)}
+    add_edges(t, root, pos)
+    colors = [n[1]['color'] for n in t.nodes(data=True)]
+    labels = {n[0]: n[1]['label'] for n in t.nodes(data=True)]
+    nx.draw(t, pos=pos, labels=labels, arrows=False, node_size=2200, node_color=colors)
+    plt.show()
+
+def build_heap_visual(arr):
+    nodes = [BNode(v) for v in arr]
+    for i in range(len(arr)):
+        l = 2*i+1; r = 2*i+2
+        if l < len(arr): nodes[i].left = nodes[l]
+        if r < len(arr): nodes[i].right = nodes[r]
+    draw_tree(nodes[0])
+
+
+# Завдання 5
+from collections import deque
+def bfs_visual(root):
+    q = deque([root]); step = 0
+    while q:
+        n = q.popleft()
+        n.color = f"#{hex(100000+step*300)[2:]}"
+        step += 1
+        draw_tree(root)
+        if n.left: q.append(n.left)
+        if n.right: q.append(n.right)
+
+def dfs_visual(root):
+    s = [root]; step = 0
+    while s:
+        n = s.pop()
+        n.color = f"#{hex(100000+step*300)[2:]}"
+        step += 1
+        draw_tree(root)
+        if n.right: s.append(n.right)
+        if n.left: s.append(n.left)
+
+
+# Завдання 6
+items = {
+    "pizza":{"cost":50,"calories":300},
+    "hamburger":{"cost":40,"calories":250},
+    "hot-dog":{"cost":30,"calories":200},
+    "pepsi":{"cost":10,"calories":100},
+    "cola":{"cost":15,"calories":220},
+    "potato":{"cost":25,"calories":350}
+}
+def greedy_algorithm(budget):
+    s = sorted(items.items(), key=lambda x: x[1]["calories"]/x[1]["cost"], reverse=True)
+    res = []; cal = 0
+    for n,d in s:
+        if d["cost"] <= budget:
+            res.append(n); budget -= d["cost"]; cal += d["calories"]
+    return res, cal
+
+def dynamic_programming(budget):
+    dp = [0]*(budget+1)
+    take = [[] for _ in range(budget+1)]
+    for n,d in items.items():
+        c=d["cost"]; cal=d["calories"]
+        for b in range(budget, c-1, -1):
+            if dp[b-c] + cal > dp[b]:
+                dp[b] = dp[b-c] + cal
+                take[b] = take[b-c] + [n]
+    return take[budget], dp[budget]
+
+
+# Завдання 7
+import random
+def monte_carlo(n=10000):
+    f = {i:0 for i in range(2, 13)}
+    for _ in range(n):
+        s = random.randint(1,6) + random.randint(1,6)
+        f[s] += 1
+    return {k: v/n for k,v in f.items()}
+
+
+# Приклад запуску
+if __name__ == "__main__":
+    print("Greedy:", greedy_algorithm(100))
+    print("DP:", dynamic_programming(100))
+    print("Monte-Carlo:", monte_carlo(5000))
